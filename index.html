@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flujo del Proceso Inmobiliario</title>
+<style>
+  .viz-root {
+    color-scheme: light;
+    --surface-1:      #fcfcfb;
+    --page-plane:     #f9f9f7;
+    --text-primary:   #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted:     #898781;
+    --gridline:       #e1e0d9;
+    --border:         rgba(11,11,11,0.10);
+
+    --broker:   #2a78d6; /* blue */
+    --captador: #eb6834; /* orange */
+    --vendedor: #1baf7a; /* aqua */
+    --cierre:   #4a3aa7; /* violet */
+    --solucion:    #2a78d6; /* brand blue — tono de la landing (odin-crm) */
+    --solucion-2:  #14b89e; /* brand teal — segundo tono de la landing */
+    --solucion-tint: #eaf3fd;
+
+    --status-critical: #d03b3b;
+    --status-warning:  #fab219;
+    --status-good:     #0ca30c;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--page-plane);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    color: var(--text-primary);
+  }
+
+  .wrap {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 40px 28px 64px;
+  }
+
+  /* ---------- Header ---------- */
+  header.page {
+    text-align: center;
+    margin-bottom: 36px;
+  }
+  header.page h1 {
+    font-size: 30px;
+    font-weight: 700;
+    margin: 0 0 8px;
+    letter-spacing: -0.01em;
+  }
+  header.page p {
+    font-size: 15px;
+    color: var(--text-secondary);
+    margin: 0;
+  }
+  .duration-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 14px;
+    padding: 7px 16px;
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  .duration-pill .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--broker);
+  }
+
+  /* ---------- Landing page solution banner ---------- */
+  .solution-block {
+    margin-bottom: 8px;
+  }
+  .solution-card {
+    background: linear-gradient(135deg, #ffffff 0%, var(--solucion-tint) 100%);
+    border: 1.5px solid var(--solucion);
+    border-radius: 16px;
+    padding: 22px 26px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    flex-wrap: wrap;
+    box-shadow: 0 2px 0 rgba(29,111,216,0.12);
+  }
+  .solution-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .solution-icon {
+    width: 48px; height: 48px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--solucion) 0%, var(--solucion-2) 100%);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    flex-shrink: 0;
+  }
+  .solution-text .tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--solucion);
+    background: var(--solucion-tint);
+    padding: 3px 9px;
+    border-radius: 999px;
+    margin-bottom: 6px;
+  }
+  .solution-text h2 {
+    font-size: 18px;
+    margin: 0 0 3px;
+    font-weight: 700;
+  }
+  .solution-text p {
+    font-size: 13.5px;
+    color: var(--text-secondary);
+    margin: 0;
+    max-width: 520px;
+  }
+  .solution-links {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .solution-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, var(--solucion) 0%, var(--solucion-2) 100%);
+    color: #fff;
+    text-decoration: none;
+    font-size: 13.5px;
+    font-weight: 600;
+    padding: 11px 18px;
+    border-radius: 10px;
+    white-space: nowrap;
+  }
+  .solution-link:hover { opacity: 0.85; }
+  .solution-link-secondary {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .solution-link-secondary:hover { color: var(--solucion); }
+
+  /* connector from solution card down to the two feeding lanes */
+  .feed-connectors {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    padding: 0 0 0 0;
+    margin-top: 2px;
+  }
+  .feed-connectors .slot { position: relative; height: 34px; }
+  .feed-connectors .slot.active::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 10px;
+    width: 2px;
+    background: var(--solucion);
+    transform: translateX(-50%);
+  }
+  .feed-connectors .slot.active .label {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--solucion);
+    color: #fff;
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .feed-connectors .slot.active::after {
+    content: "▾";
+    position: absolute;
+    left: 50%;
+    top: 12px;
+    transform: translateX(-50%);
+    color: var(--solucion);
+    font-size: 12px;
+  }
+
+  /* ---------- Phase flow header (mini timeline of roles) ---------- */
+  .phase-track {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin: 28px 0 18px;
+  }
+  .phase-track .arrow-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    font-size: 18px;
+  }
+
+  /* ---------- Swimlane columns ---------- */
+  .lanes {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+  .lane {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .lane-head {
+    padding: 18px 18px 16px;
+    color: #fff;
+    position: relative;
+  }
+  .lane-head .step-no {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    opacity: 0.85;
+    margin-bottom: 6px;
+  }
+  .lane-head h3 {
+    margin: 0 0 3px;
+    font-size: 17px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .lane-head .role-sub {
+    font-size: 12px;
+    opacity: 0.92;
+    margin: 0 0 10px;
+  }
+  .time-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,255,255,0.22);
+    padding: 5px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .lane[data-role="broker"]   .lane-head { background: var(--broker); }
+  .lane[data-role="captador"] .lane-head { background: var(--captador); }
+  .lane[data-role="vendedor"] .lane-head { background: var(--vendedor); }
+  .lane[data-role="cierre"]   .lane-head { background: var(--cierre); }
+
+  .lane-body {
+    padding: 16px 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    flex: 1;
+  }
+  .lane-section h4 {
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    margin: 0 0 8px;
+  }
+  .lane-section ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+  .lane-section li {
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--text-primary);
+    display: flex;
+    gap: 8px;
+  }
+  .lane-section li > span,
+  .lane-section li > b {
+    min-width: 0;
+  }
+  .lane-section li::before {
+    content: "";
+    flex-shrink: 0;
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    margin-top: 7px;
+    background: var(--text-muted);
+  }
+  .lane-section.docs li::before {
+    content: "✓";
+    width: auto; height: auto;
+    border-radius: 0;
+    background: none;
+    color: var(--status-good);
+    font-size: 12px;
+    font-weight: 700;
+    margin-top: 0;
+  }
+  .lane-section li b { font-weight: 600; }
+
+  .risk-box {
+    margin-top: auto;
+    background: #fdf1f0;
+    border: 1px solid rgba(208,59,59,0.25);
+    border-radius: 10px;
+    padding: 12px 13px;
+  }
+  .risk-box .risk-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--status-critical);
+    margin-bottom: 8px;
+  }
+  .risk-box ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
+  .risk-box li { font-size: 12.5px; line-height: 1.45; color: #6b2323; }
+  .risk-box li b { color: var(--status-critical); font-weight: 700; }
+
+  /* ---------- Timeline chart ---------- */
+  .timeline-section {
+    margin-top: 40px;
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 26px 24px;
+  }
+  .timeline-section h3 {
+    font-size: 14px;
+    font-weight: 700;
+    margin: 0 0 4px;
+  }
+  .timeline-section .sub {
+    font-size: 12.5px;
+    color: var(--text-secondary);
+    margin: 0 0 18px;
+  }
+  .tl-bar {
+    display: flex;
+    width: 100%;
+    height: 40px;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .tl-seg {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    position: relative;
+  }
+  .tl-seg + .tl-seg { border-left: 2px solid var(--surface-1); }
+  .tl-legend {
+    display: flex;
+    gap: 22px;
+    margin-top: 14px;
+    flex-wrap: wrap;
+  }
+  .tl-legend .item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12.5px;
+    color: var(--text-secondary);
+  }
+  .tl-legend .swatch {
+    width: 10px; height: 10px; border-radius: 3px;
+  }
+
+  /* ---------- Participants Gantt ---------- */
+  .participants {
+    margin-top: 26px;
+    padding-top: 22px;
+    border-top: 1px solid var(--gridline);
+  }
+  .participants h4 {
+    font-size: 13.5px;
+    font-weight: 700;
+    margin: 0 0 4px;
+  }
+  .participants .sub {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin: 0 0 18px;
+  }
+  .p-row { margin-bottom: 16px; }
+  .p-row:last-child { margin-bottom: 0; }
+  .p-row-label {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    font-size: 12.5px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .p-row-label .sub-label {
+    font-weight: 400;
+    color: var(--text-muted);
+    font-size: 11.5px;
+  }
+  .p-track {
+    position: relative;
+    height: 26px;
+    background: var(--gridline);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .p-bar {
+    position: absolute;
+    top: 0; bottom: 0;
+    background: var(--solucion-2);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+  }
+  .p-bar.fade-start {
+    justify-content: center;
+    clip-path: polygon(7% 0%, 100% 0%, 100% 100%, 0% 100%);
+  }
+  .p-bar span {
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .p-milestones {
+    position: relative;
+    height: 16px;
+    margin-top: 5px;
+  }
+  .p-milestones span {
+    position: absolute;
+    transform: translateX(-50%);
+    font-size: 10.5px;
+    color: var(--text-muted);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .p-milestones span::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: -9px;
+    width: 1px;
+    height: 6px;
+    background: var(--gridline);
+    transform: translateX(-50%);
+  }
+
+  footer.note {
+    margin-top: 28px;
+    text-align: center;
+    font-size: 11.5px;
+    color: var(--text-muted);
+  }
+
+  @media (max-width: 1080px) {
+    .lanes, .phase-track, .feed-connectors { grid-template-columns: 1fr; }
+    .feed-connectors .slot { display: none; }
+    .solution-card { flex-direction: column; align-items: flex-start; }
+    .solution-links { align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+<div class="viz-root">
+  <div class="wrap">
+
+    <header class="page">
+      <h1>🗺️ Diagrama de Flujo y Tiempos del Proceso Inmobiliario</h1>
+      <p>Cuatro fases consecutivas, cuatro responsables, un mismo expediente.</p>
+      <div class="duration-pill"><span class="dot"></span> Ciclo completo: 3 a 6 meses en promedio</div>
+    </header>
+
+    <!-- Landing page as solution -->
+    <div class="solution-block">
+      <div class="solution-card">
+        <div class="solution-left">
+          <div class="solution-icon">🌐</div>
+          <div class="solution-text">
+            <span class="tag">Nuestra solución</span>
+            <h2>Landing Page de Captación</h2>
+            <p>Punto de entrada digital del proceso: recibe y precalifica leads de <b>propietarios</b> (para el Captador) y de <b>compradores</b> (para el Vendedor/Colocador) antes de que el equipo intervenga manualmente.</p>
+          </div>
+        </div>
+        <div class="solution-links">
+          <a class="solution-link" href="https://odin-crm.lovable.app/clientes" target="_blank" rel="noopener">Ver landing page ↗</a>
+          <a class="solution-link-secondary" href="https://lovable.dev/projects/a3263bd0-c782-478c-8df7-7c59d0b1440b?magic_link=mc_0275f899-e4a7-4e6f-89b5-2f8130d904f7" target="_blank" rel="noopener">Editar proyecto en Lovable ↗</a>
+        </div>
+      </div>
+      <div class="feed-connectors">
+        <div class="slot"></div>
+        <div class="slot active"><span class="label">Leads: Propietarios</span></div>
+        <div class="slot active"><span class="label">Leads: Compradores</span></div>
+        <div class="slot"></div>
+      </div>
+    </div>
+
+    <!-- Phase arrow flow -->
+    <div class="phase-track">
+      <div class="arrow-row">①  Autoriza →</div>
+      <div class="arrow-row">②  Capta el inmueble →</div>
+      <div class="arrow-row">③  Coloca al comprador →</div>
+      <div class="arrow-row">④  Cierra ante notaría</div>
+    </div>
+
+    <!-- Swimlanes -->
+    <div class="lanes">
+
+      <!-- Fase 1: Bróker -->
+      <div class="lane" data-role="broker">
+        <div class="lane-head">
+          <div class="step-no">Fase 1</div>
+          <h3>👤 El Bróker</h3>
+          <p class="role-sub">Director de la operación — pilar legal y estratégico</p>
+          <span class="time-badge">⏱ Transversal a todo el ciclo</span>
+        </div>
+        <div class="lane-body">
+          <div class="lane-section">
+            <h4>Actividades clave</h4>
+            <ul>
+              <li>Define estrategia y comisiones de la agencia</li>
+              <li>Valida la viabilidad jurídica antes de promover</li>
+              <li>Redacta contratos de promesa y coordina el cierre con la notaría</li>
+            </ul>
+          </div>
+          <div class="lane-section docs">
+            <h4>Documentación requerida</h4>
+            <ul>
+              <li>Ficha técnica comercial del inmueble</li>
+              <li><span><b>Avalúo comercial</b> / estimación de valor — fija el precio de salida</span></li>
+              <li>Contrato de prestación de servicios</li>
+            </ul>
+          </div>
+          <div class="risk-box">
+            <div class="risk-title">⚠️ Riesgos críticos</div>
+            <ul>
+              <li><b>Ley Antilavado:</b> tope legal en efectivo de 8,025 UMAs (≈$870,000 MXN); el resto vía transferencia/cheque.</li>
+              <li><b>Extinción de Dominio:</b> exigir siempre el origen lícito de los fondos del comprador.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Fase 2: Captador -->
+      <div class="lane" data-role="captador">
+        <div class="lane-head">
+          <div class="step-no">Fase 2</div>
+          <h3>👤 El Captador</h3>
+          <p class="role-sub">Trato con el propietario</p>
+          <span class="time-badge">⏱ Integración: 3 a 7 días</span>
+        </div>
+        <div class="lane-body">
+          <div class="lane-section">
+            <h4>Actividades clave</h4>
+            <ul>
+              <li>Prospecta zonas y negocia exclusividad con dueños</li>
+              <li>Revisa la situación legal en el Registro Público</li>
+              <li>Calcula simulaciones de ISR para el vendedor</li>
+            </ul>
+          </div>
+          <div class="lane-section docs">
+            <h4>Solicita al propietario</h4>
+            <ul>
+              <li>Escritura pública con sello de inscripción</li>
+              <li>Identificación oficial de todos los dueños</li>
+              <li>Boleta predial y de agua sin adeudos</li>
+              <li>Constancia de situación fiscal (RFC)</li>
+              <li>Acta de matrimonio (si aplica sociedad conyugal)</li>
+            </ul>
+          </div>
+          <div class="risk-box">
+            <div class="risk-title">⚠️ Riesgos críticos</div>
+            <ul>
+              <li><b>Intestados:</b> sucesión sin terminar puede retrasar 6 a 12 meses.</li>
+              <li><b>Gravámenes ocultos:</b> hipotecas o embargos vigentes bloquean el crédito del comprador.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Fase 3: Vendedor / Colocador -->
+      <div class="lane" data-role="vendedor">
+        <div class="lane-head">
+          <div class="step-no">Fase 3</div>
+          <h3>👤 El Vendedor / Colocador</h3>
+          <p class="role-sub">Trato con el comprador</p>
+          <span class="time-badge">⏱ Conseguir oferta: 60 a 90 días</span>
+        </div>
+        <div class="lane-body">
+          <div class="lane-section">
+            <h4>Actividades clave</h4>
+            <ul>
+              <li>Publica en portales y realiza recorridos (open house)</li>
+              <li>Precalifica financieramente a los prospectos</li>
+              <li><span>Coordina el <b>avalúo bancario</b> cuando el comprador usa crédito (banco, Infonavit, Fovissste)</span></li>
+              <li>Logra la oferta formal y el apartado</li>
+            </ul>
+          </div>
+          <div class="lane-section docs">
+            <h4>Solicita al comprador</h4>
+            <ul>
+              <li>Identificación oficial vigente</li>
+              <li>CURP y constancia de situación fiscal</li>
+              <li><span>Carta de autorización de crédito <b>+ avalúo bancario</b> (si aplica)</span></li>
+              <li>Comprobantes de ingresos (3 meses)</li>
+              <li>Comprobante de domicilio reciente</li>
+            </ul>
+          </div>
+          <div class="risk-box">
+            <div class="risk-title">⚠️ Riesgos críticos</div>
+            <ul>
+              <li><b>El "salto":</b> comprador y vendedor negocian a espaldas de la agencia. Mitigar con hoja de visita firmada + identificación.</li>
+              <li><b>Inseguridad en citas:</b> filtrar identidad antes de llevar desconocidos a la propiedad.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Fase 4: Cierre -->
+      <div class="lane" data-role="cierre">
+        <div class="lane-head">
+          <div class="step-no">Fase 4</div>
+          <h3>📑 El Cierre</h3>
+          <p class="role-sub">Trámite notarial</p>
+          <span class="time-badge">⏱ Firma: 30 a 45 días</span>
+        </div>
+        <div class="lane-body">
+          <div class="lane-section">
+            <h4>Puntos clave</h4>
+            <ul>
+              <li><span><b>Contrato de promesa</b> con cláusula penal (≈10% del valor)</span></li>
+              <li><span><b>Investigación notarial:</b> Certificado de Libertad de Gravamen</span></li>
+              <li><span><b>Avalúo oficial:</b> lo solicita la notaría — base para calcular el ISAI (se usa el valor más alto entre venta y avalúo)</span></li>
+              <li><span><b>Impuestos:</b> el vendedor paga ISR; el comprador paga ISAI + honorarios</span></li>
+              <li><span><b>Firma y cobro:</b> se firma la escritura y el Bróker cobra su comisión</span></li>
+            </ul>
+          </div>
+          <div class="risk-box" style="margin-top:0; background:#fef6e6; border-color:rgba(250,178,25,0.35);">
+            <div class="risk-title" style="color:#9a6b00;">⏳ Punto de control</div>
+            <ul style="color:#5c4300;">
+              <li>El Bróker unifica los expedientes del propietario y del comprador antes de turnarlos a la notaría elegida.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Timeline chart -->
+    <div class="timeline-section">
+      <h3>Duración estimada del ciclo</h3>
+      <p class="sub">Suma de los tiempos por fase — el Bróker supervisa de forma transversal durante todo el proceso.</p>
+      <div class="tl-bar">
+        <div class="tl-seg" style="background:var(--captador); flex:5; white-space:nowrap;" title="Captador: 3–7 días">3–7 d</div>
+        <div class="tl-seg" style="background:var(--vendedor); flex:75;" title="Vendedor/Colocador: 60–90 días">Vendedor / Colocador · 60–90 días</div>
+        <div class="tl-seg" style="background:var(--cierre); flex:37; white-space:nowrap;" title="Cierre notarial: 30–45 días">30–45 d</div>
+      </div>
+      <div class="tl-legend">
+        <div class="item"><span class="swatch" style="background:var(--captador);"></span> Fase 2 · Captación del inmueble</div>
+        <div class="item"><span class="swatch" style="background:var(--vendedor);"></span> Fase 3 · Colocación con comprador</div>
+        <div class="item"><span class="swatch" style="background:var(--cierre);"></span> Fase 4 · Cierre notarial</div>
+        <div class="item"><span class="swatch" style="background:var(--solucion);"></span> Landing page · genera leads desde el día 1</div>
+      </div>
+
+      <div class="participants">
+        <h4>👥 Participantes y su presencia en el proceso</h4>
+        <p class="sub">Alineado a la misma línea de tiempo de arriba — quién está involucrado y en qué momento.</p>
+
+        <div class="p-row">
+          <div class="p-row-label">🏠 Propietario <span class="sub-label">(Vendedor del inmueble)</span></div>
+          <div class="p-track">
+            <div class="p-bar" style="left:0%; width:100%;" title="Presente durante todo el proceso">
+              <span>Presente durante todo el proceso (~6 meses)</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-row">
+          <div class="p-row-label">🤝 Comprador</div>
+          <div class="p-track">
+            <div class="p-bar fade-start" style="left:52%; width:48%;" title="Se involucra en el último tramo del proceso">
+              <span>Últimos 1.5 a 3 meses</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-row">
+          <div class="p-row-label">🏢 Inmobiliaria <span class="sub-label">(Bróker + Captador + Vendedor/Colocador)</span></div>
+          <div class="p-track">
+            <div class="p-bar" style="left:0%; width:100%;" title="Presencia transversal en todo el proceso">
+              <span>Presente de forma transversal desde el inicio</span>
+            </div>
+          </div>
+          <div class="p-milestones">
+            <span style="left:8%;">Compra</span>
+            <span style="left:44%;">Promoción</span>
+            <span style="left:88%;">Trámites generales</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="note">Elaborado a partir del proceso operativo interno · Ciclo total promedio: 3 a 6 meses</footer>
+
+  </div>
+</div>
+</body>
+</html>
